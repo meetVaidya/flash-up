@@ -1,45 +1,60 @@
 "use client"
 
-import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
-import { Loader2 } from 'lucide-react'
+import { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Loader2 } from 'lucide-react';
 
 interface GeneratedFlashcard {
-    question: string
-    answer: string
+    question: string;
+    answer: string;
 }
 
 export default function GenerateFlashcardsForm({ onFlashcardsGenerated }: { onFlashcardsGenerated: (flashcards: GeneratedFlashcard[]) => void }) {
-    const [topic, setTopic] = useState('')
-    const [count, setCount] = useState(5)
-    const [isLoading, setIsLoading] = useState(false)
+    const [topic, setTopic] = useState('');
+    const [count, setCount] = useState(5);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsLoading(true)
+        e.preventDefault();
+        setIsLoading(true);
 
         try {
             const response = await fetch('/api/generate-flashcards', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ topic, count }),
-            })
+            });
 
             if (!response.ok) {
-                throw new Error('Failed to generate flashcards')
+                throw new Error('Failed to generate flashcards');
             }
 
-            const data = await response.json()
-            onFlashcardsGenerated(data.flashcards)
+            const data = await response.json();
+            onFlashcardsGenerated(data.flashcards);
+
+            // Send the flashcards to your API to create a new deck
+            const createDeckResponse = await fetch('/api/flashcards', { // Assuming /api/flashcards creates a new deck
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: topic, // Use the topic as the deck name
+                    cards: data.flashcards
+                }),
+            });
+
+            if (!createDeckResponse.ok) {
+                throw new Error('Failed to create deck');
+            }
+
         } catch (error) {
-            console.error('Error generating flashcards:', error)
+            console.error('Error generating flashcards or creating deck:', error);
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    };
 
     return (
         <Card>
@@ -82,5 +97,5 @@ export default function GenerateFlashcardsForm({ onFlashcardsGenerated }: { onFl
                 </form>
             </CardContent>
         </Card>
-    )
+    );
 }
